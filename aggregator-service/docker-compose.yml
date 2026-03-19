@@ -1,0 +1,95 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job Discovery System — full stack
+#
+# Services:
+#   redis      — shared message broker (jobs:raw stream)
+#   postgres   — persistent storage for the aggregator
+#   crawler    — Scrapy service that publishes job events (from crawler-service/)
+#   aggregator — FastAPI service that reads the stream and serves the REST API
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+    networks:
+      - jobnet
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobpass}
+      POSTGRES_DB: ${POSTGRES_DB:-jobsdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jobuser} -d ${POSTGRES_DB:-jobsdb}"]
+      interval: 5s
+      retries: 10
+    networks:
+      - jobnet
+
+  # ── Crawler (Scrapy) ───────────────────────────────────────────────────────
+  crawler:
+    build:
+      context: ../crawler-service
+      dockerfile: Dockerfile
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JOBSEEKER_ROLE: ${JOBSEEKER_ROLE:-Backend Engineer}
+      JOBSEEKER_STACK: ${JOBSEEKER_STACK:-Python,FastAPI,PostgreSQL,Redis}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: "no"
+    command: ["scrapy", "crawl", "remotive"]
+    networks:
+      - jobnet
+
+  # ── Aggregator (FastAPI) ───────────────────────────────────────────────────
+  aggregator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jobuser}:${POSTGRES_PASSWORD:-jobpass}@postgres:5432/${POSTGRES_DB:-jobsdb}
+      PORT: ${PORT:-8000}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - jobnet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:${PORT:-8000}/health || exit 1"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:
+
+networks:
+  jobnet:
+    driver: bridge

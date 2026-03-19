@@ -1,0 +1,31 @@
+# ── Stage 1: build ──────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install build deps
+RUN pip install --upgrade pip
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+# ── Stage 2: runtime ─────────────────────────────────────────────────────────
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy pre-built site-packages from builder stage
+COPY --from=builder /install /usr/local
+
+# Copy application source
+COPY . .
+
+# Non-root user for security
+RUN useradd -m appuser
+USER appuser
+
+EXPOSE 8000
+
+# Use uvicorn with a single worker; scale horizontally with replicas.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
