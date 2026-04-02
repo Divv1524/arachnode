@@ -20,6 +20,7 @@ class BaseStartupSpider(scrapy.Spider):
         self._target_stack: set[str] = set()
         self._target_role: str = ""
 
+    @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
         spider = super().from_crawler(crawler, *args, **kwargs)
         raw_stack = crawler.settings.get("JOBSEEKER_STACK", "")
