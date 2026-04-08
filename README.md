@@ -6,8 +6,8 @@ A self-hosted microservice application for tracking automated job discovery, con
 
 I built this because managing engineering applications at product-based startups manually was slow and unscalable. As a third-year student approaching placement season, I needed a way to find relevant roles across multiple scattered platforms, uncover who the actual hiring managers were, and draft personalized outreach emails without spending hours on repetitive clicking. This system automates the top of the job-hunt funnel so I can focus on interviewing.
 
-## Demo / Screenshot placeholder
-
+## Demo placeholder
+https://arachnode.vercel.app/
 *Dashboard screenshot — add after first run*
 
 The dashboard provides a unified view of the entire pipeline. It displays active job listings filtered by status and tech stack on the main screen, a tabular view of all discovered contacts with their verification status, and an email generation pane where draft outreach templates are queued. Four key metrics track total jobs, applied jobs, discovered contacts, and drafted emails at the top.
