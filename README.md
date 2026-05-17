@@ -167,6 +167,10 @@ To reset state without restarting the full Docker stack:
 ./scripts/reset.sh --no-restart
 ```
 
+With `--no-restart`, the database and Redis reset still run, but the shared
+scheduler summary file is left untouched because the gateway/scheduler
+containers are not restarted.
+
 ### Configuration
 
 | Variable | Required | Default | Description |

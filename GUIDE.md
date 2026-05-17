@@ -102,6 +102,10 @@ Useful variants:
 ./scripts/reset.sh --no-restart
 ```
 
+With `--no-restart`, the database and Redis reset still run, but the shared
+scheduler summary file is left untouched because the gateway/scheduler
+containers are not restarted.
+
 ---
 
 ## Step 3 — Open the dashboard

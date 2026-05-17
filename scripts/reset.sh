@@ -128,15 +128,14 @@ delete_pattern "dedup:*"
 delete_pattern "dedup:agg:*"
 '
 
-echo "Clearing scheduler run summary if present..."
-"${COMPOSE[@]}" exec -T gateway sh -c 'rm -f /data/run_summary.json' >/dev/null 2>&1 || true
-"${COMPOSE[@]}" exec -T scheduler sh -c 'rm -f /data/run_summary.json' >/dev/null 2>&1 || true
-
 if [[ "$RESTART_STACK" -eq 1 ]]; then
   echo "Restarting Arachnode stack..."
   "${COMPOSE[@]}" up -d --build
+  echo "Clearing scheduler run summary if present..."
+  "${COMPOSE[@]}" exec -T gateway sh -c 'rm -f /data/run_summary.json' >/dev/null 2>&1 || true
 else
   echo "Skipping stack restart because --no-restart was provided."
+  echo "Scheduler run summary is left untouched because gateway/scheduler are not restarted."
 fi
 
 echo "Local Arachnode development state has been reset."
